@@ -1,6 +1,8 @@
+#!/usr/bin/python
 #research pentera
 #rdp_os_enumerator
 
+import sys
 import socket
 import struct
 import ssl
@@ -37,22 +39,25 @@ os_dict={"3.1.511":"Windows NT 3.1",
 "6.1.8400":"Windows Home Server 2011",
 "6.2.9200":("Windows Server 2012","Windows 8"),
 "6.3.9600":("Windows 8.1","Windows Server 2012 R2"),
-"10.10240":"Windows 10, Version 1507",
-"10.10586":"Windows 10, Version 1511",
-"10.14393":("Windows 10, Version 1607","Windows Server 2016, Version 1607"),
-"10.15063":"Windows 10, Version 1703",
-"10.16299":("Windows 10, Version 1709","Windows Server 2016, Version 1709"),
-"10.17134":"Windows 10, Version 1803",
-"10.17763":("Windows Server 2019, Version 1809","Windows 10, Version 1809"),
+"10.0.10240":"Windows 10, Version 1507",
+"10.0.10586":"Windows 10, Version 1511",
+"10.0.14393":("Windows 10, Version 1607","Windows Server 2016, Version 1607"),
+"10.0.15063":"Windows 10, Version 1703",
+"10.0.16299":("Windows 10, Version 1709","Windows Server 2016, Version 1709"),
+"10.0.17134":"Windows 10, Version 1803",
+"10.0.17763":("Windows Server 2019, Version 1809","Windows 10, Version 1809"),
 "6.6003":"Windows Server 2008, Service Pack 2, Rollup KB4489887",
-"10.18362":"Windows 10, Version 1903",
-"10.18363":"Windows 10, Version 1909",
-"10.19041":"Windows 10, Version 2004",
-"10.19042":"Windows 10, Version 20H2"}
+"10.0.18362":"Windows 10, Version 1903",
+"10.0.18363":"Windows 10, Version 1909",
+"10.0.19041":"Windows 10, Version 2004",
+"10.0.19042":"Windows 10, Version 20H2"}
 
+#test_ip="45.83.118.12"
+#test_ip = "34.83.184.114"
+#test_ip = "69.46.9.134"
+#test_ip = "66.36.234.217"
 
-#test_ip = "34.145.84.117"
-test_ip = "69.46.9.134"
+test_ip=sys.argv[1]
 
 Signature = "\x30\x37\xa0\x03\x02\x01\x60\xa1\x30\x30\x2e\x30\x2c\xa0\x2a\x04\x28"
 Identifier  = "\x4e\x54\x4c\x4d\x53\x53\x50\x00" #NTLMSSP
@@ -92,7 +97,7 @@ Parsed_Build = namedtuple("Parsed_Build", "major, minor, build, reserved")
 
 psb = Parsed_Header._make(struct.unpack("<7sxI HHI IQ", server_response[start_index:start_index+32]))
 
-print("parsed header:",psb)
+#print("parsed header:",psb)
 
 #just for dubug perpose ERASE BEFORE GIVE IN
 if psb.identifier != "NTLMSSP":
@@ -104,19 +109,25 @@ if psb.message_type != 2:
 	raise(Exception("unexpected message_type in response. expecting message_type 2"))
 	
 target_realm = struct.unpack("<{0}s".format(psb.domain_length),server_response[psb.domain_offset:psb.domain_offset+psb.domain_length])
-print ("target_realm:",target_realm)
+#print ("target_realm:",target_realm)
 
 
 pti = Parsed_Target_Info._make(struct.unpack("<Q HHI", server_response[start_index+32:start_index+48]))
 ps = Parsed_Build._make(struct.unpack("<BBH4s", server_response[start_index+48:start_index+56]))
-print("target info:",pti)
-print(ps)
-target_info= struct.unpack("<{0}s".format(pti.target_info_length),server_response[pti.target_info_offset:pti.target_info_offset + pti.target_info_length])
-print ("target_info:",target_info)
+#print("target info:",pti)
+#print(ps)
+target_info= (struct.unpack("<{0}s".format(pti.target_info_length),server_response[pti.target_info_offset:pti.target_info_offset + pti.target_info_length]))[0][1::2]
+#	print ("target_info:",	target_info)
 
 product_ver = str(ps.major)+"."+str(ps.minor)+"."+str(ps.build)
-print(os_dict[product_ver])
+print("{1}\n{0}\n{1}".format(os_dict[product_ver], "="*len(os_dict[product_ver])))
 
 rdp_connection_socket.close()
 
-
+#newconn=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# newconn.connect((test_ip,3389))
+# newconn.send("\x03\x00\x00\x13\x0e\xe0\x00\x00\x00\x00\x00\x01\x00\x08\x00\x0f\x00\x00\x00")
+# newconn.settimeout(10)
+# newconn_data=newconn.recv(1024)
+# print newconn_data
+# newconn.close()
